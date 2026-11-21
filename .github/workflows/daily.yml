@@ -1,0 +1,55 @@
+# daily.yml - Runs the news video pipeline in the cloud.
+# Two ways it starts:
+#   1. every day on a schedule (the cron line below)
+#   2. when you press "Run workflow" on the Actions tab (for testing)
+
+name: Daily news video
+
+on:
+  schedule:
+    # GitHub uses UTC. 02:30 UTC = 8:00 AM India time. Change the numbers to change the time.
+    # Format: minute hour day-of-month month day-of-week
+    - cron: "30 2 * * *"
+  workflow_dispatch:   # adds the "Run workflow" button
+
+permissions:
+  contents: read       # the job only needs to read the code
+
+jobs:
+  build-video:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30   # stop the job if something hangs
+
+    steps:
+      - name: Get the code
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip       # reuse downloaded packages to save time
+
+      - name: Install packages
+        run: pip install -r requirements.txt
+
+      - name: Run tests
+        run: python -m pytest
+
+      - name: Build the video
+        env:
+          # These come from GitHub Secrets (set up in Part B). Never write keys here.
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+        run: python -m src.main
+
+      - name: List created files
+        run: ls -lh output/*
+
+      - name: Save the video for download
+        uses: actions/upload-artifact@v7
+        with:
+          name: news-video-${{ github.run_number }}
+          path: output/
+          retention-days: 7          # lower = less storage used
+          if-no-files-found: error   # mark the run as failed if no video was made
