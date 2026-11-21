@@ -1,0 +1,9 @@
+# Always store text files with LF in the repo
+* text=auto eol=lf
+
+# Binary files: never touch
+*.ttf binary
+*.png binary
+*.jpg binary
+*.mp3 binary
+*.mp4 binary
