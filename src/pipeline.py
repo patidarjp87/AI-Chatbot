@@ -59,6 +59,12 @@ def run(cfg: Config) -> Path:
 
     log.info("Step 4/%d: getting footage (%s)", TOTAL_STEPS, cfg.setting("footage.provider"))
     footage = get_footage_provider(cfg).fetch(script, run_dir)
+    credits = sorted({clip.credit for clip in footage if clip.credit})
+    if credits:  # credit the stock source and videographers in the description
+        script.description += "\n\nStock footage: " + ", ".join(credits)
+        (run_dir / "script.json").write_text(
+            json.dumps(script.to_dict(), indent=2, ensure_ascii=False), encoding="utf-8"
+        )
 
     log.info("Step 5/%d: building video", TOTAL_STEPS)
     video_path = build_video(cfg, script, voice, footage, run_dir / "video.mp4")

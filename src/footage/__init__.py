@@ -6,6 +6,7 @@ from src.utils.registry import load_provider
 _REGISTRY = {
     "none": "src.footage.none_provider:NoFootageProvider",
     "pexels": "src.footage.pexels_provider:PexelsFootageProvider",  # next step
+    "pixabay": "src.footage.pixabay_provider:PixabayFootageProvider",
 }
 
 

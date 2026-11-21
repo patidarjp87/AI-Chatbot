@@ -73,3 +73,4 @@ class FootageClip:
     """A stock clip chosen for one scene (used when footage.provider is not 'none')."""
     scene_index: int
     path: Path
+    credit: str = ""   # credit text for the description, e.g. "username (Pixabay)"

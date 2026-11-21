@@ -30,7 +30,7 @@ RULES FOR EACH FIELD
 - keyword: 2 to 3 English words describing a generic stock video that fits the scene,
   something a camera can film (for example "oil refinery night", "city skyline",
   "stock market screen"). Never use the name of a real person. For sensitive stories
-  choose a neutral visual (for example "emergency vehicles", "government building").
+  choose a neutral visual (for example "emergency vehicles", "government building").For stories about a named person, a crime or an arrest, choose a neutral, generic visual (for example "city street", "courthouse exterior", "documents on desk") and never a visual that implies details the story does not state.
 - on_screen_text: at most 6 words, a headline for that scene. Use "" if not needed.
 - highlight_words: 1 or 2 words copied exactly from this scene's "text" (key names or
   numbers) to show in the accent color.

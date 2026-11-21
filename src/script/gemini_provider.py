@@ -113,6 +113,14 @@ def fit_length(script: VideoScript, max_words: int) -> VideoScript:
     return script
 
 
+def _is_permanent_error(exc: Exception) -> bool:
+    """True for errors that retrying cannot fix (wrong model, bad key, bad request).
+
+    429 (too many requests) is NOT permanent: waiting and retrying can work.
+    """
+    code = getattr(exc, "code", None)
+    return isinstance(code, int) and 400 <= code < 500 and code not in (408, 429)
+
 class GeminiScriptProvider(ScriptProvider):
     def __init__(self, cfg: Config):
         super().__init__(cfg)
@@ -160,7 +168,7 @@ class GeminiScriptProvider(ScriptProvider):
         return text + "\n\nNEWS ITEMS:\n" + "\n".join(lines)
 
     # ---------- calling Gemini ----------
-    @retry(attempts=3, delay=5)
+    @retry(attempts=3, delay=5, giveup=_is_permanent_error)
     def _call_model(self, prompt: str) -> str:
         """Send the prompt to Gemini and return the raw text answer."""
         response = self._client.models.generate_content(

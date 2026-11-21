@@ -19,7 +19,7 @@ log = get_logger(__name__)
 _TAIL_SECONDS = 0.4  # keep the picture a moment after the voice ends
 
 
-def _ffmpeg_path() -> str:
+def ffmpeg_path() -> str:
     """Use FFmpeg from the computer if installed, otherwise the bundled copy."""
     found = shutil.which("ffmpeg")
     if found:
@@ -55,7 +55,7 @@ def build_video(
     frame_count = math.ceil(total_seconds * fps)
 
     cmd = [
-        _ffmpeg_path(), "-y", "-loglevel", "error",
+        ffmpeg_path(), "-y", "-loglevel", "error",
         "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{width}x{height}", "-r", str(fps), "-i", "-",
         "-i", str(voice.audio_path),
     ]
@@ -91,6 +91,10 @@ def build_video(
         process.stdin.close()
     except BrokenPipeError:
         pass  # FFmpeg stopped early; its error message is read below
+    finally:
+        close = getattr(layout, "close", None)  # layouts can release clip readers here
+        if close:
+            close()
 
     error_text = process.stderr.read().decode(errors="replace")
     if process.wait() != 0:

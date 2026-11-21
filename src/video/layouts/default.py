@@ -1,9 +1,12 @@
-"""default.py - The default look: animated grid background, progress bar,
-headline cards that slide in, and captions.
+"""default.py - The default look: stock footage (or an animated grid if there is none),
+a progress bar, headline cards that slide in, and captions.
 
 A layout is a class named `Layout` with a render(t) method that returns one frame.
 To add a new look, copy this file, change it, and add its name to
 style.yaml -> allowed_layouts. Then set video.layout in settings.yaml.
+
+Frames must be requested in time order (the builder does this), because stock
+clips are read as a stream.
 """
 from __future__ import annotations
 
@@ -16,7 +19,9 @@ from src.models import FootageClip, VideoScript, VoiceResult
 from src.utils.drawing import blend, get_font, hex_to_rgb, wrap_text
 from src.utils.logger import get_logger
 from src.utils.paths import resolve
+from src.video.builder import ffmpeg_path
 from src.video.captions import CaptionRenderer
+from src.video.clips import ClipReader
 
 log = get_logger(__name__)
 
@@ -24,6 +29,7 @@ _GRID_SPACING = 120      # pixels between grid lines
 _GRID_SPEED = 60         # pixels per second the grid scrolls
 _SLIDE_SECONDS = 0.35    # how long the headline card takes to slide in
 _END_PADDING = 0.4       # extra seconds of video after the voice ends
+_ZOOM_AMOUNT = 0.08      # slow zoom grows the picture by 8% over one scene
 
 
 def scene_windows(script: VideoScript, voice: VoiceResult) -> list[tuple[float, float]]:
@@ -55,8 +61,6 @@ class Layout:
         self.script = script
         self.width, self.height, _ = cfg.video_size
         self.total_seconds = voice.duration_seconds + _END_PADDING
-        # NOTE: `footage` is not used yet. When stock clips exist, draw the clip's
-        # frame for each scene in _background() instead of the grid.
 
         # Colors and fonts (all from style.yaml)
         self.bg = hex_to_rgb(cfg.style_value("colors.background", "#0B0F14"))
@@ -70,15 +74,27 @@ class Layout:
         self.card_seconds = cfg.style_value("headline_card.show_seconds", 2.5)
         self.card_font_size = cfg.style_value("headline_card.font_size", 64)
 
-        # Timing, captions, background, logo
-        windows = scene_windows(script, voice)
-        self._scene_starts = [start for start, _ in windows]
+        # Scene timing and captions
+        self._windows = scene_windows(script, voice)
+        self._scene_starts = [start for start, _ in self._windows]
         highlights = [word for scene in script.scenes for word in scene.highlight_words]
         self.captions = CaptionRenderer(cfg, voice.words, highlights, (self.width, self.height))
+
+        # Stock footage: which scene uses which clip, and how it should look
+        self._clip_paths = {clip.scene_index: clip.path for clip in footage}
+        self._ffmpeg = ffmpeg_path() if self._clip_paths else ""
+        self._fps = cfg.setting("video.fps", 30)
+        self._darken = float(cfg.style_value("footage.darken", 0.35))
+        self._zoom_enabled = cfg.style_value("motion.zoom_effect", "slow_zoom_in") == "slow_zoom_in"
+        self._black = Image.new("RGB", (self.width, self.height), (0, 0, 0))
+        self._reader: ClipReader | None = None   # the clip currently being played
+        self._reader_scene = -1                   # which scene that clip belongs to
+
+        # Fallback background and logo
         self._grid = self._make_grid()
         self._logo = self._load_logo()
 
-    # ---------- background ----------
+    # ---------- backgrounds ----------
     def _make_grid(self) -> Image.Image:
         """Draw a grid once. We crop it at a moving offset to make it scroll."""
         image = Image.new("RGB", (self.width, self.height + _GRID_SPACING), self.bg)
@@ -90,10 +106,54 @@ class Layout:
             draw.line([(x, 0), (x, self.height + _GRID_SPACING)], fill=line_color, width=2)
         return image
 
-    def _background(self, t: float) -> Image.Image:
+    def _grid_frame(self, t: float) -> Image.Image:
         offset = int((t * _GRID_SPEED) % _GRID_SPACING)
         top = _GRID_SPACING - offset
         return self._grid.crop((0, top, self.width, top + self.height))
+
+    def _close_reader(self) -> None:
+        if self._reader is not None:
+            self._reader.close()
+            self._reader = None
+
+    def _zoom_in(self, frame: Image.Image, factor: float) -> Image.Image:
+        """Zoom into the centre of the frame (factor 1.0 = no zoom)."""
+        w, h = frame.size
+        crop_w, crop_h = w / factor, h / factor
+        left, top = (w - crop_w) / 2, (h - crop_h) / 2
+        return frame.resize((w, h), Image.Resampling.BILINEAR, box=(left, top, left + crop_w, top + crop_h))
+
+    def _footage_frame(self, t: float, scene_index: int) -> Image.Image | None:
+        """The stock-clip frame for this moment, or None if this scene has no usable clip."""
+        if scene_index != self._reader_scene:   # entered a new scene: switch clips
+            self._close_reader()
+            self._reader_scene = scene_index
+            path = self._clip_paths.get(scene_index)
+            if path is not None:
+                try:
+                    self._reader = ClipReader(path, (self.width, self.height), self._fps, self._ffmpeg)
+                except OSError as exc:
+                    log.warning("Could not open the clip for scene %d: %s", scene_index + 1, exc)
+        if self._reader is None:
+            return None
+
+        frame = self._reader.next_frame()
+        if frame is None:                        # clip unreadable: use the grid for this scene
+            log.warning("Clip for scene %d could not be read. Using the grid.", scene_index + 1)
+            self._close_reader()
+            return None
+
+        if self._zoom_enabled:
+            start, end = self._windows[scene_index]
+            progress = min(1.0, max(0.0, (t - start) / max(0.1, end - start)))
+            frame = self._zoom_in(frame, 1.0 + _ZOOM_AMOUNT * progress)
+        if self._darken > 0:
+            frame = Image.blend(frame, self._black, self._darken)
+        return frame
+
+    def close(self) -> None:
+        """Called by the builder when rendering ends (also after an error)."""
+        self._close_reader()
 
     # ---------- logo ----------
     def _load_logo(self) -> Image.Image | None:
@@ -150,9 +210,9 @@ class Layout:
     # ---------- one frame ----------
     def render(self, t: float) -> Image.Image:
         """Return the full frame for time t (in seconds)."""
-        image = self._background(t)
-        draw = ImageDraw.Draw(image)
         scene_index = max(0, bisect_right(self._scene_starts, t) - 1)
+        image = self._footage_frame(t, scene_index) or self._grid_frame(t)
+        draw = ImageDraw.Draw(image)
 
         self._draw_progress_bar(draw, t)
         self._draw_headline_card(draw, t, scene_index)

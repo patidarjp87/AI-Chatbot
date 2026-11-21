@@ -57,10 +57,12 @@ voice:
 
 # ---------- Step 4: stock footage ----------
 footage:
-  provider: none            # none (plain background) | pexels
-  pexels:
-    api_key_env: PEXELS_API_KEY
-    clips_per_scene: 1
+  provider: pixabay         # none | pixabay
+  pixabay:
+    api_key_env: PIXABAY_API_KEY
+    quality: large          # large | medium | small. Lower = faster downloads, softer picture
+    max_file_mb: 60         # skip clips bigger than this (a smaller size is tried instead)
+    min_seconds: 4          # skip very short clips, which look repetitive when looped
     cache_dir: tmp/footage
 
 # ---------- On-camera presenter (later phase) ----------

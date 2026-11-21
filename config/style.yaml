@@ -45,3 +45,5 @@ logo:
 # Layouts Gemini may choose from (each is a file in src/video/layouts/)
 allowed_layouts:
   - default
+footage:
+  darken: 0.35              # 0 = none, 1 = black. Makes text easier to read over clips
