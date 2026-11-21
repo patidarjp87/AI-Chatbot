@@ -1,0 +1,47 @@
+# ==================================================================
+# style.yaml - LOOK AND FEEL
+# Edit colors, fonts, captions, music here. No code changes needed.
+# ==================================================================
+
+colors:
+  background: "#0B0F14"
+  text: "#FFFFFF"
+  accent: "#3DEBB5"         # highlight color for key words
+  headline_bar: "#111820"
+
+fonts:
+  # Put a .ttf file in assets/fonts/ (e.g. Montserrat or Inter from Google Fonts)
+  main: assets/fonts/Montserrat-Bold.ttf
+
+captions:
+  enabled: true
+  font_size: 72
+  words_per_line: 3
+  position: lower_third     # top | center | lower_third
+  uppercase: false
+  highlight_key_words: true # accent color on words Gemini marks as important
+  animation: pop            # none | pop | fade
+
+headline_card:
+  enabled: true
+  show_seconds: 2.5
+  font_size: 64
+
+motion:
+  zoom_effect: slow_zoom_in # none | slow_zoom_in | pan
+  transition: cut           # cut | fade
+
+music:
+  enabled: false            # turn on after adding a track to assets/music/
+  file: assets/music/background.mp3
+  volume: 0.12              # 0.0 - 1.0, keep low so the voice stays clear
+
+logo:
+  enabled: false
+  file: assets/logo/logo.png
+  position: top_right
+  opacity: 0.8
+
+# Layouts Gemini may choose from (each is a file in src/video/layouts/)
+allowed_layouts:
+  - default

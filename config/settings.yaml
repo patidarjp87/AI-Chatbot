@@ -1,0 +1,88 @@
+# ==================================================================
+# settings.yaml - TECHNICAL SETTINGS
+# To switch a provider, change the "provider:" line in that section.
+# Keys are NOT stored here; only the NAME of the environment variable.
+# ==================================================================
+
+project:
+  name: world_news_shorts
+  language: en
+  timezone: Asia/Kolkata
+
+# ---------- Video format and quality ----------
+video:
+  format: shorts            # shorts | long
+  fps: 30
+  formats:
+    shorts: { width: 1080, height: 1920, max_seconds: 59 }
+    long:   { width: 1920, height: 1080, max_seconds: 480 }
+  scene_seconds_min: 2      # shortest time on one visual
+  scene_seconds_max: 4      # longest time on one visual
+  layout: default           # file name in src/video/layouts/ (without .py)
+
+# ---------- Step 1: news ----------
+news:
+  provider: rss
+  max_items: 10
+  rss:
+    feeds:
+      - https://feeds.bbci.co.uk/news/world/rss.xml
+      - https://www.aljazeera.com/xml/rss/all.xml
+
+# ---------- Step 2: script + scene plan ----------
+script:
+  provider: sample          # sample (no key) | gemini
+  speaking_rate_wpm: 150    # used to work out how many words fit the video length
+  script_prompt_file: config/prompts/script_prompt.txt
+  scene_prompt_file: config/prompts/scene_plan_prompt.txt
+  gemini:
+    # If this alias errors, copy the exact current model ID from Google AI Studio.
+    model: gemini-flash-latest
+    api_key_env: GEMINI_API_KEY
+    temperature: 0.7
+
+# ---------- Step 3: voiceover ----------
+voice:
+  provider: edge            # edge | elevenlabs | recorded
+  edge:
+    voice_name: en-US-GuyNeural   # try en-IN-PrabhatNeural for an Indian accent
+    rate: "+0%"
+    pitch: "+0Hz"
+  elevenlabs:               # later phase
+    api_key_env: ELEVENLABS_API_KEY
+    voice_id: ""
+    model_id: ""
+  recorded:                 # later phase: your own recording
+    audio_file: inputs/voiceover.mp3
+
+# ---------- Step 4: stock footage ----------
+footage:
+  provider: none            # none (plain background) | pexels
+  pexels:
+    api_key_env: PEXELS_API_KEY
+    clips_per_scene: 1
+    cache_dir: tmp/footage
+
+# ---------- On-camera presenter (later phase) ----------
+presenter:
+  enabled: false
+  provider: none            # none | recorded | avatar
+  cutin_every_seconds: 8
+  cutin_length_seconds: 3
+  recorded:
+    clips_dir: assets/presenter
+
+# ---------- Final step: what to do with the video ----------
+upload:
+  provider: manual          # manual (just save) | youtube (later)
+  youtube:                  # later phase
+    privacy: private        # private | unlisted | public
+    disclose_synthetic: false
+
+output:
+  dir: output
+  filename_pattern: "{date}_{slug}"
+  keep_intermediate_files: false
+
+logging:
+  level: INFO

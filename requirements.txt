@@ -1,0 +1,9 @@
+# Packages the project needs. Install with: pip install -r requirements.txt
+feedparser>=6.0       # reads news RSS feeds
+PyYAML>=6.0           # reads config/*.yaml
+python-dotenv>=1.0    # loads keys from .env on your laptop
+requests>=2.31        # web calls (Pexels etc.)
+edge-tts>=6.1         # free voiceover
+Pillow>=10.0          # draws headline cards and captions
+google-genai>=1.0     # Gemini API
+pytest>=8.0           # tests

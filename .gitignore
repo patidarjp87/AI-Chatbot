@@ -20,3 +20,22 @@ __pycache__/
 .pytest_cache/
 .coverage
 htmlcov/
+
+
+# Generated videos and temp files (kept out of git; GitHub saves them as artifacts)
+output/*
+!output/.gitkeep
+*.mp4
+*.mp3
+*.wav
+tmp/
+
+# Your own recordings and tokens
+inputs/*
+!inputs/.gitkeep
+*token*.json
+client_secret*.json
+
+# OS junk
+.DS_Store
+Thumbs.db
