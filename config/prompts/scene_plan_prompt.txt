@@ -1,0 +1,37 @@
+OUTPUT FORMAT
+Return ONLY valid JSON. No markdown, no code fences, no commentary.
+Use exactly this shape:
+
+{
+  "title": "string",
+  "description": "string",
+  "hashtags": ["#Shorts", "#News"],
+  "layout": "default",
+  "scenes": [
+    {
+      "text": "string",
+      "keyword": "string",
+      "on_screen_text": "string",
+      "highlight_words": ["string"],
+      "presenter_moment": false
+    }
+  ]
+}
+
+RULES FOR EACH FIELD
+- title: at most 70 characters, specific and honest, no hashtags, no clickbait.
+- description: 2 to 3 sentences summarizing the video, then a line starting
+  "Sources:" that lists the news outlets from the items below.
+- hashtags: 3 to 5 hashtags.
+- layout: choose one of: <<LAYOUTS>>
+- scenes: each scene is one visual moment. Its "text" is 6 to 14 words
+  (about <<SCENE_MIN>> to <<SCENE_MAX>> seconds when spoken). All scene "text" fields
+  joined in order form the full voiceover, so write natural, connected sentences.
+- keyword: 2 to 3 English words describing a generic stock video that fits the scene,
+  something a camera can film (for example "oil refinery night", "city skyline",
+  "stock market screen"). Never use the name of a real person. For sensitive stories
+  choose a neutral visual (for example "emergency vehicles", "government building").
+- on_screen_text: at most 6 words, a headline for that scene. Use "" if not needed.
+- highlight_words: 1 or 2 words copied exactly from this scene's "text" (key names or
+  numbers) to show in the accent color.
+- presenter_moment: always false for now.

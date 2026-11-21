@@ -5,6 +5,7 @@ news -> script -> voice -> footage -> video build -> upload
 import json
 import re
 from pathlib import Path
+from dataclasses import asdict
 
 from src.config_loader import Config
 from src.footage import get_footage_provider
@@ -45,6 +46,9 @@ def run(cfg: Config) -> Path:
     run_dir = _make_run_folder(cfg, script.title)
     (run_dir / "script.json").write_text(
         json.dumps(script.to_dict(), indent=2, ensure_ascii=False), encoding="utf-8"
+    )
+    (run_dir / "news.json").write_text(
+        json.dumps([asdict(item) for item in news_items], indent=2, ensure_ascii=False), encoding="utf-8"
     )
 
     log.info("Step 3/%d: creating voiceover (%s)", TOTAL_STEPS, cfg.setting("voice.provider"))

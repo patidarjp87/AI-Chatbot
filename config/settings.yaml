@@ -31,13 +31,13 @@ news:
 
 # ---------- Step 2: script + scene plan ----------
 script:
-  provider: sample          # sample (no key) | gemini
+  provider: gemini          # sample (no key) | gemini
   speaking_rate_wpm: 150    # used to work out how many words fit the video length
   script_prompt_file: config/prompts/script_prompt.txt
   scene_prompt_file: config/prompts/scene_plan_prompt.txt
   gemini:
     # If this alias errors, copy the exact current model ID from Google AI Studio.
-    model: gemini-flash-latest
+    model: gemini-3.8-flash
     api_key_env: GEMINI_API_KEY
     temperature: 0.7
 
