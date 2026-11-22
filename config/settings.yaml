@@ -36,8 +36,15 @@ script:
   script_prompt_file: config/prompts/script_prompt.txt
   scene_prompt_file: config/prompts/scene_plan_prompt.txt
   gemini:
-    # If this alias errors, copy the exact current model ID from Google AI Studio.
-    model: gemini-3.8-flash
+    # Models are tried in this order. If one is busy (503) or unavailable, the next is used.
+    # Pick names from: python scripts/list_models.py  (flash models work best)
+    models:
+      - gemini-3.8-flash
+      - gemini-3.7-flash
+      - gemini-3.6-flash
+      - gemini-3.5-flash
+    attempts_per_model: 2       # tries on one model before moving to the next
+    retry_delay_seconds: 10     # wait between tries on the same model
     api_key_env: GEMINI_API_KEY
     temperature: 0.7
 

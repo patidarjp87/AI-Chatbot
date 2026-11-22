@@ -18,7 +18,7 @@ permissions:
 jobs:
   build-video:
     runs-on: ubuntu-latest
-    timeout-minutes: 30   # stop the job if something hangs
+    timeout-minutes: 45   # stop the job if something hangs
 
     steps:
       - name: Get the code
@@ -36,12 +36,23 @@ jobs:
       - name: Run tests
         run: python -m pytest
 
-      - name: Build the video
+      - name: Build the video (tries again if Gemini is busy)
         env:
-          # These come from GitHub Secrets (set up in Part B). Never write keys here.
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
-        run: python -m src.main
+        run: |
+          for attempt in 1 2 3; do
+            echo "Attempt $attempt of 3"
+            if python -m src.main; then
+              exit 0
+            fi
+            if [ "$attempt" -lt 3 ]; then
+              echo "Attempt $attempt failed. Waiting 5 minutes before trying again..."
+              sleep 300
+            fi
+          done
+          echo "All attempts failed."
+          exit 1
 
       - name: List created files
         run: ls -lh output/*
