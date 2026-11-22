@@ -147,11 +147,13 @@ class PixabayFootageProvider(FootageProvider):
             raise _NetworkError(f"could not reach Pixabay ({type(exc).__name__})") from None
         if response.status_code == 429:
             raise _RateLimited()
-        if response.status_code != 200:
+        if response.status_code in (400, 401, 403):
             raise ConfigError(
                 f"Pixabay answered with HTTP {response.status_code}. "
                 f"Check PIXABAY_API_KEY in your .env file. Details: {response.text[:120]}"
             )
+        if response.status_code != 200:  # a temporary server problem: skip this scene
+            raise RuntimeError(f"Pixabay answered with HTTP {response.status_code}")
         return response.json().get("hits", [])
 
     # ---------- downloading ----------

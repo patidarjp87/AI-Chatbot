@@ -36,6 +36,7 @@ def _make_run_folder(cfg: Config, title: str) -> Path:
 
 def run(cfg: Config) -> Path:
     """Run the whole pipeline once and return the output folder."""
+    uploader = get_upload_provider(cfg)  # created first, so missing keys fail fast
     log.info("Step 1/%d: fetching news (%s)", TOTAL_STEPS, cfg.setting("news.provider"))
     news_items = get_news_provider(cfg).fetch()
 
@@ -70,7 +71,7 @@ def run(cfg: Config) -> Path:
     video_path = build_video(cfg, script, voice, footage, run_dir / "video.mp4")
 
     log.info("Step 6/%d: finishing (%s)", TOTAL_STEPS, cfg.setting("upload.provider"))
-    get_upload_provider(cfg).publish(video_path, script)
+    uploader.publish(video_path, script)
 
     log.info("Done. Files are in: %s", run_dir)
     return run_dir

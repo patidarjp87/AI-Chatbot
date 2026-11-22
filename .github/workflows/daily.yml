@@ -36,15 +36,23 @@ jobs:
       - name: Run tests
         run: python -m pytest
 
-      - name: Build the video (tries again if Gemini is busy)
+      - name: Build the video and upload it (tries again if something is busy)
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
         run: |
           for attempt in 1 2 3; do
             echo "Attempt $attempt of 3"
-            if python -m src.main; then
+            python -m src.main && code=0 || code=$?
+            if [ "$code" -eq 0 ]; then
               exit 0
+            fi
+            if [ "$code" -eq 2 ]; then
+              echo "Configuration problem (a missing key or an expired YouTube login). Retrying will not help."
+              exit 2
             fi
             if [ "$attempt" -lt 3 ]; then
               echo "Attempt $attempt failed. Waiting 5 minutes before trying again..."
