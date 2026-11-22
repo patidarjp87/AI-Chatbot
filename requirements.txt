@@ -8,3 +8,5 @@ Pillow>=10.0          # draws headline cards and captions
 google-genai>=1.0     # Gemini API
 pytest>=8.0           # tests
 imageio-ffmpeg>=0.5.1 # bundled FFmpeg, used if FFmpeg isn't installed on the machine
+google-api-python-client>=2.100   # YouTube API
+google-auth-oauthlib>=1.2         # the one-time login

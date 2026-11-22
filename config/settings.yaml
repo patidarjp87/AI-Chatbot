@@ -83,10 +83,17 @@ presenter:
 
 # ---------- Final step: what to do with the video ----------
 upload:
-  provider: manual          # manual (just save) | youtube (later)
-  youtube:                  # later phase
-    privacy: private        # private | unlisted | public
-    disclose_synthetic: false
+  provider: youtube          # manual (just save the file) | youtube
+  youtube:
+    mode: private            # private | scheduled | public. Keep "private" for the first test
+    publish_delay_hours: 3   # used only in "scheduled" mode: YouTube itself publishes after this long
+    category_id: "25"        # 25 = News & Politics
+    made_for_kids: false
+    contains_synthetic_media: false   # true adds YouTube's "altered or synthetic content" label
+    notify_subscribers: false
+    client_id_env: YOUTUBE_CLIENT_ID
+    client_secret_env: YOUTUBE_CLIENT_SECRET
+    refresh_token_env: YOUTUBE_REFRESH_TOKEN
 
 output:
   dir: output
