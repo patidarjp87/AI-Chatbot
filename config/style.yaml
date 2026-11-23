@@ -47,3 +47,51 @@ logo:
 # Layouts the AI may choose from (each is a file in src/video/layouts/)
 allowed_layouts:
   - default
+# ------------------------------------------------------------------
+# theme - design system for the motion-graphics layouts
+# ------------------------------------------------------------------
+theme:
+  colors:
+    background: "#101827"
+    background_secondary: "#172536"
+    card: "#1D3345"
+    card_border: "#2B4A63"
+    text: "#F5F7FA"
+    text_secondary: "#A9B7C7"
+    cyan: "#43D9E5"
+    teal: "#42D6B2"
+    warning: "#FFBE55"
+    danger: "#FF657A"
+    success: "#45D6A0"
+  fonts:
+    heading: assets/fonts/Hind-Bold.ttf
+    body: assets/fonts/Hind-Medium.ttf
+  type:                 # text sizes in pixels at 1080 px width; scaled for other sizes
+    heading: 96
+    subheading: 72
+    title: 52
+    body: 46
+    value: 150
+    small: 38
+  card:
+    radius: 36
+    padding: 44
+    border_width: 3
+    shadow_blur: 28
+    shadow_opacity: 0.45
+    shadow_offset: 14
+  grid:
+    spacing: 96
+    line_alpha: 0.07    # 0 = no grid lines
+    drift: 18           # pixels per second the grid slowly moves
+    vignette: 0.30      # darkening towards the edges
+  motion:
+    fade_seconds: 0.45
+    reveal_seconds: 0.6
+    stagger_seconds: 0.18
+    slide_pixels: 140
+    ease: out_cubic     # linear | in_cubic | out_quad | out_cubic | in_out_cubic | in_out_sine | out_back
+  supersample: 2        # 2 = smooth edges (cached once); 1 = faster, rougher edges
+  safe_area:            # fractions of the frame kept clear of YouTube's buttons and title (approximate)
+    shorts: { left: 0.06, top: 0.08, right: 0.12, bottom: 0.20 }
+    long:   { left: 0.05, top: 0.06, right: 0.05, bottom: 0.08 }

@@ -20,6 +20,7 @@ from pathlib import Path
 import freetype
 import uharfbuzz as hb
 from PIL import Image, ImageChops
+from src.utils.drawing import layer_from_masks
 
 _DEVANAGARI_RANGES = ((0x0900, 0x097F), (0xA8E0, 0xA8FF))
 _CACHE_LIMIT = 512  # how many shaped texts to remember per font
@@ -172,6 +173,18 @@ class HarfBuzzFont:
         """Width of the text in pixels (same name Pillow's fonts use)."""
         return self._layout(text)[1]
 
+    def render_layer(self, text: str, fill, stroke_width: int = 0, stroke_fill=(0, 0, 0)):
+        """Make a transparent RGBA picture of the text.
+
+        Returns (picture, (dx, dy)). To put the text's top-left corner (anchor 'la') at (x, y),
+        paste the picture at (x - dx, y - dy).
+        """
+        if not text.strip():
+            return Image.new("RGBA", (1, 1), (0, 0, 0, 0)), (0, 0)
+        mask, outline, origin, _ = self._make_masks(text, int(stroke_width))
+        layer = layer_from_masks(mask, outline, fill, stroke_fill)
+        return layer, (origin[0], origin[1] - round(self.ascent))
+    
     def draw_text(
         self,
         image: Image.Image,
