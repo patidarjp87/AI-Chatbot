@@ -1,13 +1,13 @@
-"""pipeline.py - Runs the steps in order. New steps get added here as we build them.
+"""pipeline.py - Runs the steps in order.
 
-news -> script -> voice -> footage -> video build -> upload
+topic/news -> script -> voice -> footage -> video build -> upload
 """
 import json
 import re
-from pathlib import Path
 from dataclasses import asdict
+from pathlib import Path
 
-from src.config_loader import Config
+from src.config_loader import Config, ConfigError
 from src.footage import get_footage_provider
 from src.news import get_news_provider
 from src.script import get_script_provider
@@ -23,28 +23,44 @@ TOTAL_STEPS = 6
 
 
 def _slugify(text: str, max_length: int = 40) -> str:
-    """'Top World Headlines - 2026-11-22' -> 'top-world-headlines-2026-11-22'"""
-    return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")[:max_length]
+    """'OTP Fraud Basics' -> 'otp-fraud-basics'. Keeps English letters and digits only (Hindi gives '')."""
+    return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")[:max_length].strip("-")
 
 
-def _make_run_folder(cfg: Config, title: str) -> Path:
+def _make_run_folder(cfg: Config, script) -> Path:
     """Create the output folder for this run, named from output.filename_pattern."""
+    slug = _slugify(script.slug) or _slugify(script.title) or "video"  # Hindi titles have no English letters
     pattern = cfg.setting("output.filename_pattern", "{date}_{slug}")
-    name = pattern.format(date=today_string(cfg.setting("project.timezone")), slug=_slugify(title))
+    name = pattern.format(date=today_string(cfg.setting("project.timezone")), slug=slug)
     return ensure_dir(Path(cfg.setting("output.dir", "output")) / name)
+
+
+def _check_safety(cfg: Config) -> None:
+    """Phase 1 topics are NOT source-verified, so they may only be uploaded privately."""
+    if (
+        cfg.setting("news.provider") == "evergreen"
+        and cfg.setting("upload.provider") == "youtube"
+        and str(cfg.setting("upload.youtube.mode", "private")).lower() != "private"
+    ):
+        raise ConfigError(
+            "The 'evergreen' topic list is for testing and is not source-verified. "
+            "Set upload.youtube.mode to 'private' (or use upload.provider: manual)."
+        )
 
 
 def run(cfg: Config) -> Path:
     """Run the whole pipeline once and return the output folder."""
+    _check_safety(cfg)
     uploader = get_upload_provider(cfg)  # created first, so missing keys fail fast
-    log.info("Step 1/%d: fetching news (%s)", TOTAL_STEPS, cfg.setting("news.provider"))
+
+    log.info("Step 1/%d: choosing the topic (%s)", TOTAL_STEPS, cfg.setting("news.provider"))
     news_items = get_news_provider(cfg).fetch()
 
     log.info("Step 2/%d: writing script (%s)", TOTAL_STEPS, cfg.setting("script.provider"))
     script = get_script_provider(cfg).generate(news_items)
     log.info("Script: %d scenes, %d words", len(script.scenes), script.word_count)
 
-    run_dir = _make_run_folder(cfg, script.title)
+    run_dir = _make_run_folder(cfg, script)
     (run_dir / "script.json").write_text(
         json.dumps(script.to_dict(), indent=2, ensure_ascii=False), encoding="utf-8"
     )

@@ -4,8 +4,9 @@ Use exactly this shape:
 
 {
   "title": "string",
+  "slug": "string",
   "description": "string",
-  "hashtags": ["#Shorts", "#News"],
+  "hashtags": ["#Shorts", "#DigitalSamajh"],
   "layout": "default",
   "scenes": [
     {
@@ -19,19 +20,14 @@ Use exactly this shape:
 }
 
 RULES FOR EACH FIELD
-- title: at most 70 characters, specific and honest, no hashtags, no clickbait.
-- description: 2 to 3 sentences summarizing the video, then a line starting
-  "Sources:" that lists the news outlets from the items below.
-- hashtags: 3 to 5 hashtags.
+- title: Hindi (Devanagari), at most 70 characters, specific and honest. Create curiosity without fake alarm. No hashtags.
+- slug: 2 to 5 English words in lowercase joined by hyphens, naming the topic (used for a file name), for example "otp-fraud-basics".
+- description: Hindi. Two or three natural sentences about what viewers will learn, then a blank line, then one line starting with "Sources:" followed by the source names from the source material exactly as given. Never invent sources or web addresses.
+- hashtags: 4 to 6. Always include #Shorts and #DigitalSamajh. The others can be Hindi or English topic hashtags.
 - layout: choose one of: <<LAYOUTS>>
-- scenes: each scene is one visual moment. Its "text" is 6 to 14 words
-  (about <<SCENE_MIN>> to <<SCENE_MAX>> seconds when spoken). All scene "text" fields
-  joined in order form the full voiceover, so write natural, connected sentences.
-- keyword: 2 to 3 English words describing a generic stock video that fits the scene,
-  something a camera can film (for example "oil refinery night", "city skyline",
-  "stock market screen"). Never use the name of a real person. For sensitive stories
-  choose a neutral visual (for example "emergency vehicles", "government building").For stories about a named person, a crime or an arrest, choose a neutral, generic visual (for example "city street", "courthouse exterior", "documents on desk") and never a visual that implies details the story does not state.
-- on_screen_text: at most 6 words, a headline for that scene. Use "" if not needed.
-- highlight_words: 1 or 2 words copied exactly from this scene's "text" (key names or
-  numbers) to show in the accent color.
+- scenes: use 7 to 9 scenes. Each scene is one visual moment, lasting about <<SCENE_MIN>> to <<SCENE_MAX>> seconds when spoken. All scene "text" fields joined in order form the full voiceover, so they must flow as connected sentences.
+- text: Hindi in Devanagari, 6 to 14 words.
+- keyword: 2 to 3 English words describing a generic stock video that a camera can film, such as "smartphone typing", "digital lock", "data network", "credit card payment", "keyboard typing", "server room", "qr code scan" or "mobile notification". Never use police, criminals, hooded hackers, people in distress, identifiable faces, real brands or logos. If no neutral visual fits, use "abstract technology".
+- on_screen_text: a short Hindi headline of at most 5 words. Latin acronyms such as OTP or UPI are allowed here. Use "" if not needed.
+- highlight_words: 1 or 2 words copied exactly from that scene's "text" (key words).
 - presenter_moment: always false for now.

@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import json
 import re
+import unicodedata
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -64,11 +65,17 @@ def _clean(text: str, max_bytes: int) -> str:
 
 
 def _tags(hashtags: list[str]) -> list[str]:
-    """Turn '#WorldNews' into the tag 'WorldNews', within YouTube's total length limit."""
+    """Turn '#WorldNews' into the tag 'WorldNews', within YouTube's total length limit.
+
+    Keeps letters and digits from any script, including Hindi vowel signs (marks).
+    """
     tags: list[str] = []
     total = 0
     for hashtag in hashtags:
-        name = re.sub(r"\W", "", hashtag.lstrip("#"))
+        name = "".join(
+            ch for ch in hashtag.lstrip("#")
+            if ch.isalnum() or ch == "_" or unicodedata.category(ch).startswith("M")
+        )
         if not name or name.lower() in {t.lower() for t in tags}:
             continue
         if total + len(name) + 1 > TAGS_LIMIT_CHARS:

@@ -4,14 +4,13 @@
 # ==================================================================
 
 colors:
-  background: "#0B0F14"
+  background: "#07121F"     # dark navy
   text: "#FFFFFF"
-  accent: "#3DEBB5"         # highlight color for key words
-  headline_bar: "#111820"
+  accent: "#2DD4BF"         # teal, used for highlighted words and the progress bar
+  headline_bar: "#0F2740"
 
 fonts:
-  # Put a .ttf file in assets/fonts/ (e.g. Montserrat or Inter from Google Fonts)
-  main: assets/fonts/Montserrat-Bold.ttf
+  main: assets/fonts/Hind-Bold.ttf   # Hind covers Hindi and English
 
 captions:
   enabled: true
@@ -19,8 +18,8 @@ captions:
   words_per_line: 3
   position: lower_third     # top | center | lower_third
   uppercase: false
-  highlight_key_words: true # accent color on words Gemini marks as important
-  animation: pop            # none | pop | fade
+  highlight_key_words: true
+  animation: pop            # none | pop
 
 headline_card:
   enabled: true
@@ -28,13 +27,16 @@ headline_card:
   font_size: 64
 
 motion:
-  zoom_effect: slow_zoom_in # none | slow_zoom_in | pan
-  transition: cut           # cut | fade
+  zoom_effect: slow_zoom_in # none | slow_zoom_in
+  transition: cut
+
+footage:
+  darken: 0.35              # 0 = none, 1 = black. Makes text easier to read over clips
 
 music:
-  enabled: false            # turn on after adding a track to assets/music/
+  enabled: false            # music comes in a later phase
   file: assets/music/background.mp3
-  volume: 0.12              # 0.0 - 1.0, keep low so the voice stays clear
+  volume: 0.12
 
 logo:
   enabled: false
@@ -42,8 +44,6 @@ logo:
   position: top_right
   opacity: 0.8
 
-# Layouts Gemini may choose from (each is a file in src/video/layouts/)
+# Layouts the AI may choose from (each is a file in src/video/layouts/)
 allowed_layouts:
   - default
-footage:
-  darken: 0.35              # 0 = none, 1 = black. Makes text easier to read over clips

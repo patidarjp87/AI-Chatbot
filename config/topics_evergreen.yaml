@@ -1,0 +1,121 @@
+# ==================================================================
+# TEST TOPICS (Phase 1). Written from general knowledge, NOT checked against
+# official sources. Never publish a video made from these. Phase 2 replaces this
+# list with a researched, source-backed topic system.
+# Add or edit topics: each needs an id, a title and a brief.
+# ==================================================================
+topics:
+  - id: digital_arrest_scam
+    category: scams
+    title: "Digital arrest scam"
+    brief: >
+      Scammers phone or video-call a person, pretend to be police, customs or another government
+      agency, claim the person is linked to a crime, and say the person is under "digital arrest"
+      and must stay on the call and transfer money to prove innocence. Genuine agencies do not
+      arrest people over a video call and do not demand money or OTPs by phone. Safe response:
+      hang up, do not transfer money, talk to family, and report through the official cybercrime
+      reporting channels.
+
+  - id: otp_fraud
+    category: scams
+    title: "OTP fraud"
+    brief: >
+      An OTP (one-time password) is a secret code that approves a payment or login. Fraudsters
+      call or message pretending to be a bank, delivery company or utility and ask for it. Sharing
+      it lets them approve an action on the victim's account. A genuine bank never asks for your
+      OTP, PIN or full card details on a call. Safe response: never share it, hang up, and contact
+      the bank using the number on the card or the official website.
+
+  - id: fake_customer_care_number
+    category: scams
+    title: "Fake customer care numbers"
+    brief: >
+      Fraudsters get fake customer-care numbers to appear in online search results and map
+      listings. A person searching for help calls one, and the fake agent asks for card details or
+      an OTP, or asks them to install a screen-sharing app. Genuine companies publish their contact
+      details on their official website and app. Safe habit: open the company's official app or
+      website directly instead of searching for a number.
+
+  - id: screen_sharing_scam
+    category: scams
+    title: "Screen-sharing app scam"
+    brief: >
+      Screen-sharing or remote-access apps let another person see and control a phone screen.
+      Fraudsters persuade victims to install one for "help" or a "refund", then watch banking apps,
+      read OTP messages and approve payments. A bank or support team does not need you to share
+      your screen while you use banking apps. Safe habit: never install such an app because a
+      stranger asks. If it already happened, uninstall it and contact the bank through its official
+      channel.
+
+  - id: upi_pin_rule
+    category: everyday
+    title: "The UPI PIN rule"
+    brief: >
+      In UPI, the PIN is needed only to SEND money. To receive money you never enter a PIN.
+      Fraudsters send a "collect request" or ask you to scan a QR code or enter your PIN "to
+      receive" money, and the payment actually leaves your account. Safe habit: if a screen asks
+      for your PIN, read it carefully, because it means money is going out.
+
+  - id: how_upi_works
+    category: everyday
+    title: "How UPI payments work"
+    brief: >
+      UPI lets people send money between bank accounts instantly using a mobile app and a UPI ID
+      instead of account numbers. The person enters a secret PIN to approve each payment, and the
+      money moves from one bank account to another. The app is the messenger; the bank accounts
+      hold the money.
+
+  - id: app_permissions
+    category: everyday
+    title: "App permissions on your phone"
+    brief: >
+      Apps can ask for permissions such as camera, microphone, location, contacts and SMS. Each
+      permission gives the app access to private information. Safe habit: allow only what the app
+      truly needs, check the permission list in phone settings, remove access you do not need, and
+      uninstall apps you do not use.
+
+  - id: ai_voice_cloning_scam
+    category: ai
+    title: "AI voice cloning scams"
+    brief: >
+      AI tools can imitate a person's voice from a short audio sample. Fraudsters may phone a
+      relative using a copied voice and claim there is an emergency that needs urgent money. Safe
+      habit: hang up and call the person back on their known number, and agree on a family code
+      word that only real family members know.
+
+  - id: deepfake_basics
+    category: ai
+    title: "What is a deepfake"
+    brief: >
+      A deepfake is a video, image or audio clip made or changed with AI so it looks or sounds like
+      a real person. Some are harmless entertainment and some are used to mislead. Safe habit: do
+      not trust a shocking clip only because it looks real, check whether trusted official channels
+      or news sources show the same thing, and be careful with anything that asks for urgent money.
+
+  - id: how_chatgpt_works
+    category: ai
+    title: "How AI chatbots work"
+    brief: >
+      AI chatbots such as ChatGPT are language models trained on very large amounts of text to
+      predict likely next words, which is how they produce sentences. They can sound confident and
+      still be wrong, so important facts about health, money or law should be checked with official
+      sources. Do not share passwords, OTPs or private details with a chatbot.
+
+  - id: how_gps_works
+    category: technology
+    title: "How GPS works"
+    brief: >
+      GPS satellites continuously broadcast their position and the exact time. A phone's receiver
+      listens to signals from several satellites and works out how far each one is from the time
+      the signal took to arrive, then calculates its own position. The phone only receives these
+      signals; it does not send anything to the satellites. Apps may then share the location over
+      the internet.
+
+  - id: how_internet_data_travels
+    category: technology
+    title: "How data travels on the internet"
+    brief: >
+      Data sent over the internet is split into small packets. Each packet travels through many
+      routers and may take a different route, and the packets are put back in order at the
+      destination. Website names are turned into numeric addresses by a system called DNS, so the
+      packets know where to go.

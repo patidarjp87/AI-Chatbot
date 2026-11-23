@@ -12,7 +12,7 @@ from pathlib import Path
 
 @dataclass
 class NewsItem:
-    """One news story from a feed."""
+    """One topic or news story given to the script writer."""
     title: str
     summary: str = ""
     link: str = ""
@@ -38,6 +38,7 @@ class VideoScript:
     hashtags: list[str]
     scenes: list[Scene]
     layout: str = "default"
+    slug: str = ""                              # short English name, used for the output folder
 
     @property
     def voiceover_text(self) -> str:
@@ -54,7 +55,7 @@ class VideoScript:
 
 @dataclass
 class WordTiming:
-    """When one spoken word starts and ends (in seconds). Used for captions later."""
+    """When one spoken word starts and ends (in seconds). Used for captions."""
     text: str
     start: float
     end: float
