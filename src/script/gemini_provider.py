@@ -1,13 +1,13 @@
 """gemini_provider.py - Writes the script and the scene plan with Google Gemini.
 
 Settings (settings.yaml -> script.gemini): models, attempts_per_model,
-retry_delay_seconds, api_key_env, temperature.
+retry_delay_seconds, api_key_env, temperature. Also script.structures and
+script.force_structure (the script pattern rotates by date).
 The instructions for the AI live in config/prompts/*.txt, so you can change the
 tone without touching any code.
 
-One request returns everything as JSON: title, description, hashtags, layout and
-scenes. We check the answer and ask again (up to MAX_ATTEMPTS) if it is invalid
-or too long.
+One request returns everything as JSON: title, slug, description, hashtags, layout and
+scenes. We check the answer and ask again (up to MAX_ATTEMPTS) if it is invalid or too long.
 
 If a model is busy (503) or unavailable, the next model in the list is tried.
 """
@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import json
 import re
+from datetime import date
 
 from src.config_loader import Config, ConfigError
 from src.models import NewsItem, Scene, VideoScript
@@ -27,9 +28,10 @@ from src.utils.retry import retry
 log = get_logger(__name__)
 
 MAX_ATTEMPTS = 3            # how many times we ask for a valid script (bad JSON or too long)
-_SUMMARY_CHARS = 300        # how much of each news summary we send to Gemini
+_SUMMARY_CHARS = 1500       # how much of each source text we send to Gemini
 _MIN_WORD_RATIO = 0.7       # the script should use at least 70% of the word budget
 _YOUTUBE_TITLE_LIMIT = 100  # YouTube rejects longer titles
+_SLUG_LIMIT = 40
 
 # Error codes from Google, and what we do about them
 _TRANSIENT_CODES = {429, 500, 502, 503, 504}  # busy or temporarily broken: wait, then try another model
@@ -110,14 +112,18 @@ def parse_script(raw: str, cfg: Config) -> VideoScript:
     if layout not in allowed:
         layout = cfg.setting("video.layout", "default")
 
-    date = today_string(cfg.setting("project.timezone"))
-    title = str(data.get("title", "")).strip() or f"World News Update - {date}"
+    # Slug: a short English name for the output folder (letters, digits and hyphens only)
+    slug = re.sub(r"[^a-z0-9]+", "-", str(data.get("slug", "")).lower()).strip("-")[:_SLUG_LIMIT].strip("-")
+
+    date_text = today_string(cfg.setting("project.timezone"))
+    title = str(data.get("title", "")).strip() or f"Daily update - {date_text}"
     return VideoScript(
         title=title[:_YOUTUBE_TITLE_LIMIT],
         description=str(data.get("description", "")).strip(),
         hashtags=hashtags,
         scenes=scenes,
         layout=layout,
+        slug=slug,
     )
 
 
@@ -159,8 +165,25 @@ class GeminiScriptProvider(ScriptProvider):
             raise ConfigError(f"Prompt file not found: {path} (setting: {setting_key})")
         return path.read_text(encoding="utf-8").strip()
 
+    def _pick_structure(self) -> str:
+        """Choose today's script structure from settings (script.structures), rotating by date."""
+        structures = self.cfg.setting("script.structures") or []
+        if not structures:
+            return "Use whichever clear structure suits the topic."
+        forced = str(self.cfg.setting("script.force_structure", "") or "")
+        if forced:
+            for item in structures:
+                if item.get("name") == forced:
+                    return str(item.get("instruction", ""))
+            names = ", ".join(str(item.get("name")) for item in structures)
+            raise ConfigError(f"script.force_structure '{forced}' not found. Available: {names}")
+        ordinal = date.fromisoformat(today_string(self.cfg.setting("project.timezone"))).toordinal()
+        item = structures[ordinal % len(structures)]
+        log.info("Script structure today: %s", item.get("name"))
+        return str(item.get("instruction", ""))
+
     def _build_prompt(self, news_items: list[NewsItem], min_words: int, max_words: int) -> str:
-        """Combine the writing rules, the output format and today's news into one prompt."""
+        """Combine the writing rules, the output format and the source material into one prompt."""
         text = self._read_prompt("script.script_prompt_file") + "\n\n" + self._read_prompt("script.scene_prompt_file")
 
         fillers = {
@@ -170,6 +193,7 @@ class GeminiScriptProvider(ScriptProvider):
             "LAYOUTS": ", ".join(self.cfg.style_value("allowed_layouts", ["default"])),
             "SCENE_MIN": self.cfg.setting("video.scene_seconds_min", 2),
             "SCENE_MAX": self.cfg.setting("video.scene_seconds_max", 4),
+            "STRUCTURE": self._pick_structure(),
         }
         for name, value in fillers.items():
             text = text.replace(f"<<{name}>>", str(value))
@@ -180,7 +204,7 @@ class GeminiScriptProvider(ScriptProvider):
             if item.summary:
                 line += f" - {item.summary[:_SUMMARY_CHARS]}"
             lines.append(line)
-        return text + "\n\nNEWS ITEMS:\n" + "\n".join(lines)
+        return text + "\n\nSOURCE MATERIAL:\n" + "\n".join(lines)
 
     # ---------- calling Gemini ----------
     def _call_one_model(self, model: str, prompt: str) -> str:

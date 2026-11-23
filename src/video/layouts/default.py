@@ -16,7 +16,7 @@ from PIL import Image, ImageDraw
 
 from src.config_loader import Config
 from src.models import FootageClip, VideoScript, VoiceResult
-from src.utils.drawing import blend, get_font, hex_to_rgb, wrap_text
+from src.utils.drawing import blend, draw_text, get_font, hex_to_rgb, wrap_text
 from src.utils.logger import get_logger
 from src.utils.paths import resolve
 from src.video.builder import ffmpeg_path
@@ -30,6 +30,7 @@ _GRID_SPEED = 60         # pixels per second the grid scrolls
 _SLIDE_SECONDS = 0.35    # how long the headline card takes to slide in
 _END_PADDING = 0.4       # extra seconds of video after the voice ends
 _ZOOM_AMOUNT = 0.08      # slow zoom grows the picture by 8% over one scene
+_CARD_LINE_SPACING = 1.4 # line height of the headline card (Hindi needs room for vowel signs)
 
 
 def scene_windows(script: VideoScript, voice: VoiceResult) -> list[tuple[float, float]]:
@@ -63,11 +64,12 @@ class Layout:
         self.total_seconds = voice.duration_seconds + _END_PADDING
 
         # Colors and fonts (all from style.yaml)
-        self.bg = hex_to_rgb(cfg.style_value("colors.background", "#0B0F14"))
-        self.accent = hex_to_rgb(cfg.style_value("colors.accent", "#3DEBB5"))
+        self.bg = hex_to_rgb(cfg.style_value("colors.background", "#07121F"))
+        self.accent = hex_to_rgb(cfg.style_value("colors.accent", "#2DD4BF"))
         self.text_color = hex_to_rgb(cfg.style_value("colors.text", "#FFFFFF"))
-        self.bar_color = hex_to_rgb(cfg.style_value("colors.headline_bar", "#111820"))
-        self.font_path = cfg.style_value("fonts.main", "assets/fonts/Montserrat-Bold.ttf")
+        self.bar_color = hex_to_rgb(cfg.style_value("colors.headline_bar", "#0F2740"))
+        self.font_path = cfg.style_value("fonts.main", "assets/fonts/Hind-Bold.ttf")
+        self.text_engine = cfg.setting("video.text_engine", "auto")
 
         # Headline card settings
         self.card_enabled = cfg.style_value("headline_card.enabled", True)
@@ -186,7 +188,7 @@ class Layout:
         top = int(self.height * 0.035)
         draw.rectangle([0, top, filled, top + 12], fill=self.accent)
 
-    def _draw_headline_card(self, draw: ImageDraw.ImageDraw, t: float, scene_index: int) -> None:
+    def _draw_headline_card(self, image: Image.Image, draw: ImageDraw.ImageDraw, t: float, scene_index: int) -> None:
         text = self.script.scenes[scene_index].on_screen_text
         local = t - self._scene_starts[scene_index]
         if not self.card_enabled or not text or local > self.card_seconds:
@@ -195,9 +197,9 @@ class Layout:
         progress = min(1.0, local / _SLIDE_SECONDS)
         ease = 1 - (1 - progress) ** 3  # starts fast, slows at the end
         card_width = int(self.width * 0.84)
-        font = get_font(self.font_path, self.card_font_size)
+        font = get_font(self.font_path, self.card_font_size, self.text_engine)
         lines = wrap_text(text.upper(), font, card_width - 90)[:3]
-        line_height = int(self.card_font_size * 1.25)
+        line_height = int(self.card_font_size * _CARD_LINE_SPACING)
         card_height = len(lines) * line_height + 60
 
         x0 = int(self.width * 0.08 - (1 - ease) * self.width)  # slides in from the left
@@ -205,7 +207,8 @@ class Layout:
         draw.rounded_rectangle([x0, y0, x0 + card_width, y0 + card_height], radius=24, fill=self.bar_color)
         draw.rectangle([x0, y0, x0 + 14, y0 + card_height], fill=self.accent)
         for i, line in enumerate(lines):
-            draw.text((x0 + 44, y0 + 30 + i * line_height), line, font=font, fill=self.text_color, anchor="lt")
+            draw_text(image, draw, (x0 + 44, y0 + 30 + i * line_height), line, font,
+                      fill=self.text_color, anchor="lt")
 
     # ---------- one frame ----------
     def render(self, t: float) -> Image.Image:
@@ -215,7 +218,7 @@ class Layout:
         draw = ImageDraw.Draw(image)
 
         self._draw_progress_bar(draw, t)
-        self._draw_headline_card(draw, t, scene_index)
-        self.captions.draw(draw, t)
+        self._draw_headline_card(image, draw, t, scene_index)
+        self.captions.draw(image, draw, t)
         self._draw_logo(image)
         return image

@@ -5,8 +5,8 @@
 # ==================================================================
 
 project:
-  name: world_news_shorts
-  language: en
+  name: digital_samajh
+  language: hi              # language code sent to YouTube (hi = Hindi)
   timezone: Asia/Kolkata
 
 # ---------- Video format and quality ----------
@@ -16,14 +16,19 @@ video:
   formats:
     shorts: { width: 1080, height: 1920, max_seconds: 59 }
     long:   { width: 1920, height: 1080, max_seconds: 480 }
-  scene_seconds_min: 2      # shortest time on one visual
-  scene_seconds_max: 4      # longest time on one visual
+  scene_seconds_min: 3      # used in the AI prompt: about how long one scene lasts
+  scene_seconds_max: 6
   layout: default           # file name in src/video/layouts/ (without .py)
+  text_engine: auto         # auto | harfbuzz | pillow. Hindi needs harfbuzz (auto uses it when installed)
 
-# ---------- Step 1: news ----------
+# ---------- Step 1: topic / news ----------
 news:
-  provider: rss
+  provider: evergreen       # evergreen = hand-written topic list (Phase 1 TEST only) | rss
   max_items: 10
+  evergreen:
+    topics_file: config/topics_evergreen.yaml
+    pick: rotate            # rotate = a different topic each day | random
+    topic_id: ""            # type a topic id here to force that topic while testing
   rss:
     feeds:
       - https://feeds.bbci.co.uk/news/world/rss.xml
@@ -32,19 +37,35 @@ news:
 # ---------- Step 2: script + scene plan ----------
 script:
   provider: gemini          # sample (no key) | gemini
-  speaking_rate_wpm: 150    # used to work out how many words fit the video length
+  speaking_rate_wpm: 125    # Hindi narration runs at about 125-135 words per minute
   script_prompt_file: config/prompts/script_prompt.txt
   scene_prompt_file: config/prompts/scene_plan_prompt.txt
+  force_structure: ""       # type a structure name below to force it while testing
+  # The script structure rotates by date, so videos do not all follow the same pattern.
+  structures:
+    - name: scenario
+      instruction: "Realistic everyday scenario. Open with a short situation the viewer can picture (for example 'Imagine your phone rings...'), then explain what is really happening and what to do."
+    - name: myth_vs_fact
+      instruction: "Myth versus fact. State a common wrong belief, then the correct fact, then why the difference matters in daily life."
+    - name: three_signs
+      instruction: "Three warning signs. Name exactly three clear signs, then give one action the viewer should take."
+    - name: how_it_works
+      instruction: "How it works. Explain the mechanism step by step with one simple everyday comparison, then why it matters to the viewer."
+    - name: mistakes
+      instruction: "Mistakes to avoid. Describe two or three common mistakes, why each is risky, and the safe habit to use instead."
+    - name: step_by_step
+      instruction: "Step-by-step guide. Give a short sequence of actions the viewer can do on their own phone, in order."
+    - name: question_surprise
+      instruction: "A question followed by a surprising explanation. Open with a curious question, give the surprising answer, then say what it means for the viewer."
   gemini:
     # Models are tried in this order. If one is busy (503) or unavailable, the next is used.
-    # Pick names from: python scripts/list_models.py  (flash models work best)
     models:
       - gemini-3.8-flash
       - gemini-3.7-flash
       - gemini-3.6-flash
       - gemini-3.5-flash
-    attempts_per_model: 2       # tries on one model before moving to the next
-    retry_delay_seconds: 10     # wait between tries on the same model
+    attempts_per_model: 2
+    retry_delay_seconds: 10
     api_key_env: GEMINI_API_KEY
     temperature: 0.7
 
@@ -52,7 +73,7 @@ script:
 voice:
   provider: edge            # edge | elevenlabs | recorded
   edge:
-    voice_name: en-US-GuyNeural   # try en-IN-PrabhatNeural for an Indian accent
+    voice_name: hi-IN-MadhurNeural   # alternative: hi-IN-SwaraNeural
     rate: "+0%"
     pitch: "+0Hz"
   elevenlabs:               # later phase
@@ -68,8 +89,8 @@ footage:
   pixabay:
     api_key_env: PIXABAY_API_KEY
     quality: large          # large | medium | small. Lower = faster downloads, softer picture
-    max_file_mb: 60         # skip clips bigger than this (a smaller size is tried instead)
-    min_seconds: 4          # skip very short clips, which look repetitive when looped
+    max_file_mb: 60
+    min_seconds: 4
     cache_dir: tmp/footage
 
 # ---------- On-camera presenter (later phase) ----------
@@ -83,13 +104,13 @@ presenter:
 
 # ---------- Final step: what to do with the video ----------
 upload:
-  provider: youtube          # manual (just save the file) | youtube
+  provider: manual          # manual (just save the file) | youtube. Keep manual for the first local test
   youtube:
-    mode: private            # private | scheduled | public. Keep "private" for the first test
-    publish_delay_hours: 3   # used only in "scheduled" mode: YouTube itself publishes after this long
-    category_id: "25"        # 25 = News & Politics
+    mode: private           # private | scheduled | public. Phase 1 topics must stay private
+    publish_delay_hours: 3
+    category_id: "27"       # 27 = Education, 28 = Science & Technology
     made_for_kids: false
-    contains_synthetic_media: false   # true adds YouTube's "altered or synthetic content" label
+    contains_synthetic_media: false
     notify_subscribers: false
     client_id_env: YOUTUBE_CLIENT_ID
     client_secret_env: YOUTUBE_CLIENT_SECRET

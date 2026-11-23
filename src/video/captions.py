@@ -1,28 +1,35 @@
 """captions.py - Groups spoken words into short caption lines and draws them.
 
 Settings come from style.yaml (captions.*). Word timings come from the voice step,
-so each caption appears exactly when it's spoken.
+so each caption appears exactly when it is spoken. Works with Hindi: words are matched
+with their vowel signs kept, and the Hindi full stop (danda) ends a caption group.
 """
 from __future__ import annotations
 
-import re
+import unicodedata
 from bisect import bisect_right
 from dataclasses import dataclass
 
-from PIL import ImageDraw
+from PIL import Image, ImageDraw
 
 from src.config_loader import Config
 from src.models import WordTiming
-from src.utils.drawing import get_font, hex_to_rgb
+from src.utils.drawing import draw_text, get_font, hex_to_rgb
 
-_SENTENCE_END = (".", "!", "?")
+_SENTENCE_END = (".", "!", "?", "।", "॥")   # includes the Hindi danda
 _POSITIONS = {"top": 0.14, "center": 0.50, "lower_third": 0.72}  # fraction of screen height
 _POP_SECONDS = 0.12
 
 
 def _normalize(word: str) -> str:
-    """Lowercase and strip punctuation so 'Iran,' matches 'iran'."""
-    return re.sub(r"[^a-z0-9']", "", word.lower())
+    """Lowercase and drop punctuation, but KEEP letters, digits and vowel signs (marks).
+
+    Hindi needs the marks: without them 'स्कैम' would turn into unrelated letters.
+    """
+    return "".join(
+        ch for ch in word.lower()
+        if ch.isalnum() or ch == "'" or unicodedata.category(ch).startswith("M")
+    )
 
 
 @dataclass
@@ -56,14 +63,15 @@ class CaptionRenderer:
     def __init__(self, cfg: Config, words: list[WordTiming], highlight_words: list[str], size: tuple[int, int]):
         self.width, self.height = size
         self.enabled = cfg.style_value("captions.enabled", True)
-        self.font_path = cfg.style_value("fonts.main", "assets/fonts/Montserrat-Bold.ttf")
+        self.font_path = cfg.style_value("fonts.main", "assets/fonts/Hind-Bold.ttf")
+        self.engine = cfg.setting("video.text_engine", "auto")
         self.font_size = cfg.style_value("captions.font_size", 72)
         self.uppercase = cfg.style_value("captions.uppercase", False)
         self.highlight_on = cfg.style_value("captions.highlight_key_words", True)
-        self.animation = cfg.style_value("captions.animation", "pop")  # pop | none (fade acts like none for now)
+        self.animation = cfg.style_value("captions.animation", "pop")  # pop | none
         self.y_fraction = _POSITIONS.get(cfg.style_value("captions.position", "lower_third"), 0.72)
         self.text_color = hex_to_rgb(cfg.style_value("colors.text", "#FFFFFF"))
-        self.accent_color = hex_to_rgb(cfg.style_value("colors.accent", "#3DEBB5"))
+        self.accent_color = hex_to_rgb(cfg.style_value("colors.accent", "#2DD4BF"))
 
         self.chunks = build_chunks(words, cfg.style_value("captions.words_per_line", 3))
         self._starts = [chunk.start for chunk in self.chunks]
@@ -77,12 +85,12 @@ class CaptionRenderer:
         return chunk if t <= chunk.end else None
 
     def _measure(self, texts: list[str], size: int):
-        font = get_font(self.font_path, size)
+        font = get_font(self.font_path, size, self.engine)
         space = font.getlength(" ")
         widths = [font.getlength(text) for text in texts]
         return font, space, widths, sum(widths) + space * (len(texts) - 1)
 
-    def draw(self, draw: ImageDraw.ImageDraw, t: float) -> None:
+    def draw(self, image: Image.Image, draw: ImageDraw.ImageDraw, t: float) -> None:
         """Draw the caption for time t (seconds) onto the frame."""
         if not self.enabled:
             return
@@ -98,7 +106,7 @@ class CaptionRenderer:
         size = max(8, int(self.font_size * scale))
         font, space, widths, total = self._measure(texts, size)
 
-        max_width = self.width * 0.92  # shrink if the words don't fit on screen
+        max_width = self.width * 0.92  # shrink if the words do not fit on screen
         if total > max_width:
             size = max(8, int(size * max_width / total))
             font, space, widths, total = self._measure(texts, size)
@@ -108,9 +116,9 @@ class CaptionRenderer:
         stroke = max(2, size // 14)
         for word, text, width in zip(chunk.words, texts, widths):
             highlighted = self.highlight_on and _normalize(word.text) in self._highlights
-            draw.text(
-                (x, y), text, font=font, anchor="lm",
+            draw_text(
+                image, draw, (x, y), text, font,
                 fill=self.accent_color if highlighted else self.text_color,
-                stroke_width=stroke, stroke_fill=(0, 0, 0),
+                anchor="lm", stroke_width=stroke, stroke_fill=(0, 0, 0),
             )
             x += width + space
