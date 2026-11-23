@@ -129,3 +129,50 @@ def draw_text(
     else:  # normal Pillow font
         draw.text(xy, text, font=font, fill=fill, anchor=anchor,
                   stroke_width=stroke_width, stroke_fill=stroke_fill)
+
+
+def font_ascent(font) -> float:
+    """Pixels from the top of a text line down to its baseline."""
+    if hasattr(font, "ascent"):  # HarfBuzzFont
+        return font.ascent
+    return font.getmetrics()[0]
+
+
+def layer_from_masks(mask: Image.Image, outline: Image.Image | None, fill, stroke_fill=(0, 0, 0)) -> Image.Image:
+    """Turn a text mask (and an optional outline mask) into an RGBA picture with clean edges.
+
+    The transparent pixels get the SAME colour as the text, so no dark halo appears
+    when the picture is blended over a background.
+    """
+    width, height = mask.size
+    layer = Image.new("RGBA", (width, height), (*fill, 0))
+    layer.paste((*fill, 255), (0, 0, width, height), mask)
+    if outline is not None:
+        under = Image.new("RGBA", (width, height), (*stroke_fill, 0))
+        under.paste((*stroke_fill, 255), (0, 0, width, height), outline)
+        layer = Image.alpha_composite(under, layer)
+    return layer
+
+
+def text_layer(text: str, font, fill, stroke_width: int = 0, stroke_fill=(0, 0, 0)):
+    """Make a small transparent picture of one line of text.
+
+    Returns (picture, (dx, dy)). To put the text's top-left corner (anchor 'la') at (x, y),
+    paste the picture at (x - dx, y - dy). Works with both kinds of font.
+    """
+    if not text.strip():
+        return Image.new("RGBA", (1, 1), (0, 0, 0, 0)), (0, 0)
+    if hasattr(font, "render_layer"):  # HarfBuzzFont
+        return font.render_layer(text, fill, stroke_width, stroke_fill)
+
+    pad = stroke_width + 2  # normal Pillow font
+    left, top, right, bottom = font.getbbox(text, anchor="la", stroke_width=stroke_width)
+    width, height = max(1, right - left) + 2 * pad, max(1, bottom - top) + 2 * pad
+    mask = Image.new("L", (width, height), 0)
+    ImageDraw.Draw(mask).text((pad - left, pad - top), text, font=font, fill=255, anchor="la")
+    outline = None
+    if stroke_width > 0:
+        outline = Image.new("L", (width, height), 0)
+        ImageDraw.Draw(outline).text((pad - left, pad - top), text, font=font, fill=255,
+                                     anchor="la", stroke_width=stroke_width)
+    return layer_from_masks(mask, outline, fill, stroke_fill), (pad - left, pad - top)
