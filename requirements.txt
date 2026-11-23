@@ -10,3 +10,5 @@ pytest>=8.0           # tests
 imageio-ffmpeg>=0.5.1 # bundled FFmpeg, used if FFmpeg isn't installed on the machine
 google-api-python-client>=2.100   # YouTube API
 google-auth-oauthlib>=1.2         # the one-time login
+uharfbuzz>=0.40       # decides how Hindi letters join and where vowel signs go
+freetype-py>=2.4      # draws the chosen glyphs
